@@ -20,16 +20,26 @@ template <> inline Byte fromBytes<Byte>(Bytes &bytes);
 // genericos
 
 // especializaciones de primitivos
+template <> Bytes toBytes<int8_t>(int8_t val);
+template <> Bytes toBytes<int16_t>(int16_t val);
 template <> Bytes toBytes<int32_t>(int32_t val);
 template <> Bytes toBytes<int64_t>(int64_t val);
+template <> Bytes toBytes<float>(float val);
+template <> Bytes toBytes<double>(double val);
+template <> Bytes toBytes<bool>(bool val);
 template <> Bytes toBytes<char>(char val);
 
 // fromBytes
 // genericos
 
 // especializaciones de primitivos
+template <> int8_t fromBytes<int8_t>(Bytes &bytes);
+template <> int16_t fromBytes<int16_t>(Bytes &bytes);
 template <> int32_t fromBytes<int32_t>(Bytes &bytes);
 template <> int64_t fromBytes<int64_t>(Bytes &bytes);
+template <> float fromBytes<float>(Bytes &bytes);
+template <> double fromBytes<double>(Bytes &bytes);
+template <> bool fromBytes<bool>(Bytes &bytes);
 template <> char fromBytes<char>(Bytes &bytes);
 
 // sobrecarga de operador de ostream
