@@ -1,51 +1,38 @@
 #include <BytesSerializer.hpp>
-#include <array>
-#include <iostream>
-#include <iterator>
-#include <stdexcept>
+#include <istream>
+#include <ostream>
 
 
-using Byte = std::uint8_t;
-using Bytes = std::vector<Byte>;
+// genericos
 
-template <> Bytes toBytes<int32_t>(int32_t val) {
+template <typename int_t, size_t bytes_n> Bytes toBytes(int_t val) {
 	Bytes bytes;
-	bytes.reserve(4);
+	bytes.reserve(bytes_n);
 	Byte *a_begin = reinterpret_cast<Byte *>(&val);
-	Byte *a_end = a_begin + 4;
+	Byte *a_end = a_begin + bytes_n;
 	std::copy(a_begin, a_end, std::back_inserter(bytes));
 	return bytes;
 }
-
-template <> Bytes toBytes<char>(char val) {
-	return toBytes(static_cast<Byte>(val));
-}
-
-template <> Bytes toBytes<Byte>(Byte val) {
-	Bytes bytes;
-	bytes.emplace_back(val);
-	return bytes;
-}
-
-template <> int32_t fromBytes<int32_t>(Bytes &bytes) {
+template <typename int_t, size_t bytes_n> int_t fromBytes(Bytes &bytes) {
 	size_t len = bytes.size();
-	if (len >= 4) {
-		int32_t val = 0;
-		Byte val_bytes[4];
+	if (len >= bytes_n) {
+		int_t val = 0;
+		Byte val_bytes[bytes_n];
 		// LSB -> MSB
-		for (size_t i = 0, pos = len - 1; i < 4; i++, pos--) {
-			val_bytes[3 - i] = bytes[pos];
+		for (size_t i = 0, pos = len - 1; i < bytes_n; i++, pos--) {
+			val_bytes[(bytes_n - 1) - i] = bytes[pos];
 			bytes.pop_back();
 		}
-		std::memcpy(&val, val_bytes, sizeof(int32_t));
+		std::memcpy(&val, val_bytes, sizeof(int_t));
 		return val;
 	} else {
 		throw std::underflow_error("not enought bytes");
 	}
 }
-
-template <> char fromBytes<char>(Bytes &bytes) {
-	return fromBytes<Byte>(bytes);
+template <> Bytes toBytes<Byte>(Byte val) {
+	Bytes bytes;
+	bytes.emplace_back(val);
+	return bytes;
 }
 template <> Byte fromBytes<Byte>(Bytes &bytes) {
 	if (bytes.size() > 0) {
@@ -54,6 +41,28 @@ template <> Byte fromBytes<Byte>(Bytes &bytes) {
 		return val;
 	}
 	throw std::underflow_error("not enought bytes to read");
+}
+
+// toBytes
+template <> Bytes toBytes<int32_t>(int32_t val) {
+	return toBytes<int32_t, 4>(val);
+}
+template <> Bytes toBytes<int64_t>(int64_t val) {
+	return toBytes<int64_t, 8>(val);
+}
+template <> Bytes toBytes<char>(char val) {
+	return toBytes(static_cast<Byte>(val));
+}
+
+// fromBytes
+template <> int32_t fromBytes<int32_t>(Bytes &bytes) {
+	return fromBytes<int32_t, 4>(bytes);
+}
+template <> int64_t fromBytes<int64_t>(Bytes &bytes) {
+	return fromBytes<int64_t, 8>(bytes);
+}
+template <> char fromBytes<char>(Bytes &bytes) {
+	return fromBytes<Byte>(bytes);
 }
 
 // sobrecarga de operador de ostream
