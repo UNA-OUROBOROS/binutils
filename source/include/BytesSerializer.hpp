@@ -6,6 +6,11 @@
 using Byte = std::uint8_t;
 using Bytes = std::vector<Byte>;
 
+// utiles
+inline void appendBytes(Bytes source, Bytes &dest) {
+	dest.insert(std::end(dest), std::begin(source), std::end(source));
+}
+
 // no se pueden tipos no especializados
 template <typename T> Bytes toBytes(T val) = delete;
 template <typename T> T fromBytes(Bytes &bytes) = delete;
