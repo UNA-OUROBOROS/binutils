@@ -1,16 +1,31 @@
 #include <BytesSerializer.hpp>
-#include <iostream>
 #include <fstream>
-
+#include <iostream>
 
 struct Foo {
-	int32_t a;
-	int32_t b;
+	int32_t numero;
+	char caracter;
 };
+
+template <> Bytes toBytes(Foo val) {
+	Bytes bytes;
+	appendBytes(toBytes(val.numero), bytes);
+	appendBytes(toBytes(val.caracter), bytes);
+	return bytes;
+}
+
+template <> Foo fromBytes(Bytes &bytes) {
+	// es obligatorio leer en el orden inverso
+	// aunque podríamos invertir los bytes no vale la pena
+	char caracter = fromBytes<char>(bytes);
+	int32_t numero = fromBytes<int32_t>(bytes);
+
+	return {numero, caracter};
+}
 
 int main(int, char **) {
 	std::string nombreArchivo = "datos.bin";
-	int32_t b = 0x0A1B2C3D;
+	int32_t b = 1;
 	char c = 'Z';
 	std::cout << "b: " << b << "\n"
 	          << "c: " << c << "\n";
@@ -21,9 +36,9 @@ int main(int, char **) {
 		                                         std::ofstream::binary);
 
 		if (archivo) {
-			Foo a;
+			Foo a{b, c};
 
-			archivo << toBytes(b) << toBytes(c);
+			archivo << toBytes(a);
 		} else {
 			std::cerr << "no se pudo abrir el archivo\n";
 			return 0;
@@ -36,10 +51,8 @@ int main(int, char **) {
 		if (entrada.is_open()) {
 			Bytes bytes;
 			entrada >> bytes;
-			char c1 = fromBytes<char>(bytes);
-			int32_t b1 = fromBytes<int32_t>(bytes);
-			std::cout << "b1: " << b1 << "\n"
-			          << "c1: " << c1 << "\n";
+			Foo val = fromBytes<Foo>(bytes);
+			std::cout << "val {" << val.numero << ", " << val.caracter << "}.\n";
 		}
 	}
 }
