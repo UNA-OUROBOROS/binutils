@@ -1,6 +1,7 @@
 #include <BytesSerializer.hpp>
 #include <fstream>
 #include <iostream>
+#include <string>
 
 struct Foo {
 	int32_t numero;
@@ -14,13 +15,8 @@ template <> Bytes toBytes(Foo val) {
 	return bytes;
 }
 
-template <> Foo fromBytes(Bytes &bytes) {
-	// es obligatorio leer en el orden inverso
-	// aunque podríamos invertir los bytes no vale la pena
-	char caracter = fromBytes<char>(bytes);
-	int32_t numero = fromBytes<int32_t>(bytes);
-
-	return {numero, caracter};
+template <> Foo fromBytes(BytesIterator &first, BytesIterator &last) {
+	return {fromBytes<int32_t>(first, last), fromBytes<char>(first, last)};
 }
 
 int main(int, char **) {
@@ -51,8 +47,11 @@ int main(int, char **) {
 		if (entrada.is_open()) {
 			Bytes bytes;
 			entrada >> bytes;
-			Foo val = fromBytes<Foo>(bytes);
-			std::cout << "val {" << val.numero << ", " << val.caracter << "}.\n";
+			BytesIterator begin = bytes.cbegin();
+			BytesIterator end = bytes.cend();
+			Foo val = fromBytes<Foo>(begin, end);
+			std::cout << "val {" << val.numero << ", " << val.caracter
+			          << "}.\n";
 		}
 	}
 }

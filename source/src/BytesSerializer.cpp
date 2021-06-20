@@ -1,5 +1,7 @@
 #include <BytesSerializer.hpp>
+#include <algorithm>
 #include <istream>
+#include <iterator>
 #include <ostream>
 
 // genericos
@@ -12,16 +14,15 @@ template <typename int_t, size_t bytes_n> Bytes toBytes(int_t val) {
 	std::copy(a_begin, a_end, std::back_inserter(bytes));
 	return bytes;
 }
-template <typename int_t, size_t bytes_n> int_t fromBytes(Bytes &bytes) {
-	size_t len = bytes.size();
+template <typename int_t, size_t bytes_n>
+int_t fromBytes(BytesIterator &first, BytesIterator &last) {
+	size_t len = std::distance(first, last);
 	if (len >= bytes_n) {
 		int_t val = 0;
 		Byte val_bytes[bytes_n];
 		// LSB -> MSB
-		for (size_t i = 0, pos = len - 1; i < bytes_n; i++, pos--) {
-			val_bytes[(bytes_n - 1) - i] = bytes[pos];
-			bytes.pop_back();
-		}
+		std::copy(first, first + bytes_n, val_bytes);
+		first += bytes_n;
 		std::memcpy(&val, val_bytes, sizeof(int_t));
 		return val;
 	} else {
@@ -33,10 +34,10 @@ template <> Bytes toBytes<Byte>(Byte val) {
 	bytes.emplace_back(val);
 	return bytes;
 }
-template <> Byte fromBytes<Byte>(Bytes &bytes) {
-	if (bytes.size() > 0) {
-		Byte val = bytes[bytes.size() - 1];
-		bytes.pop_back();
+template <> Byte fromBytes<Byte>(BytesIterator &first, BytesIterator &last) {
+	if (std::distance(first, last) > 0) {
+		Byte val = *first;
+		first++;
 		return val;
 	}
 	throw std::underflow_error("not enought bytes to read");
@@ -55,9 +56,7 @@ template <> Bytes toBytes<int32_t>(int32_t val) {
 template <> Bytes toBytes<int64_t>(int64_t val) {
 	return toBytes<int64_t, 8>(val);
 }
-template <> Bytes toBytes<float>(float val) { 
-    return toBytes<float, 4>(val);
-}
+template <> Bytes toBytes<float>(float val) { return toBytes<float, 4>(val); }
 template <> Bytes toBytes<double>(double val) {
 	return toBytes<double, 8>(val);
 }
@@ -69,29 +68,34 @@ template <> Bytes toBytes<char>(char val) {
 }
 
 // fromBytes
-template <> int8_t fromBytes<int8_t>(Bytes &bytes) {
-	return fromBytes<int8_t, 1>(bytes);
+template <>
+int8_t fromBytes<int8_t>(BytesIterator &first, BytesIterator &last) {
+	return fromBytes<int8_t, 1>(first, last);
 }
-template <> int16_t fromBytes<int16_t>(Bytes &bytes) {
-	return fromBytes<int16_t, 2>(bytes);
+template <>
+int16_t fromBytes<int16_t>(BytesIterator &first, BytesIterator &last) {
+	return fromBytes<int16_t, 2>(first, last);
 }
-template <> int32_t fromBytes<int32_t>(Bytes &bytes) {
-	return fromBytes<int32_t, 4>(bytes);
+template <>
+int32_t fromBytes<int32_t>(BytesIterator &first, BytesIterator &last) {
+	return fromBytes<int32_t, 4>(first, last);
 }
-template <> int64_t fromBytes<int64_t>(Bytes &bytes) {
-	return fromBytes<int64_t, 8>(bytes);
+template <>
+int64_t fromBytes<int64_t>(BytesIterator &first, BytesIterator &last) {
+	return fromBytes<int64_t, 8>(first, last);
 }
-template <> float fromBytes<float>(Bytes &bytes) {
-	return fromBytes<float, 4>(bytes);
+template <> float fromBytes<float>(BytesIterator &first, BytesIterator &last) {
+	return fromBytes<float, 4>(first, last);
 }
-template <> double fromBytes<double>(Bytes &bytes) {
-	return fromBytes<double, 8>(bytes);
+template <>
+double fromBytes<double>(BytesIterator &first, BytesIterator &last) {
+	return fromBytes<double, 8>(first, last);
 }
-template <> bool fromBytes<bool>(Bytes &bytes) {
-	return fromBytes<Byte>(bytes);
+template <> bool fromBytes<bool>(BytesIterator &first, BytesIterator &last) {
+	return fromBytes<Byte>(first, last);
 }
-template <> char fromBytes<char>(Bytes &bytes) {
-	return fromBytes<Byte>(bytes);
+template <> char fromBytes<char>(BytesIterator &first, BytesIterator &last) {
+	return fromBytes<Byte>(first, last);
 }
 
 // sobrecarga de operador de ostream

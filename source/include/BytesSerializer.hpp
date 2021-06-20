@@ -5,6 +5,7 @@
 
 using Byte = std::uint8_t;
 using Bytes = std::vector<Byte>;
+using BytesIterator = Bytes::const_iterator;
 
 // utiles
 inline void appendBytes(Bytes source, Bytes &dest) {
@@ -13,13 +14,16 @@ inline void appendBytes(Bytes source, Bytes &dest) {
 
 // no se pueden tipos no especializados
 template <typename T> Bytes toBytes(T val) = delete;
-template <typename T> T fromBytes(Bytes &bytes) = delete;
+template <typename T>
+T fromBytes(BytesIterator &first, BytesIterator &last) = delete;
 
 // genericos
 template <typename int_t, size_t bytes_n> inline Bytes toBytes(int_t val);
-template <typename int_t, size_t bytes_n> inline int_t fromBytes(Bytes &bytes);
+template <typename int_t, size_t bytes_n>
+inline int_t fromBytes(BytesIterator &first, BytesIterator &last);
 template <> inline Bytes toBytes<Byte>(Byte val);
-template <> inline Byte fromBytes<Byte>(Bytes &bytes);
+template <>
+inline Byte fromBytes<Byte>(BytesIterator &first, BytesIterator &Last);
 
 // toBytes
 // genericos
@@ -38,14 +42,17 @@ template <> Bytes toBytes<char>(char val);
 // genericos
 
 // especializaciones de primitivos
-template <> int8_t fromBytes<int8_t>(Bytes &bytes);
-template <> int16_t fromBytes<int16_t>(Bytes &bytes);
-template <> int32_t fromBytes<int32_t>(Bytes &bytes);
-template <> int64_t fromBytes<int64_t>(Bytes &bytes);
-template <> float fromBytes<float>(Bytes &bytes);
-template <> double fromBytes<double>(Bytes &bytes);
-template <> bool fromBytes<bool>(Bytes &bytes);
-template <> char fromBytes<char>(Bytes &bytes);
+template <> int8_t fromBytes<int8_t>(BytesIterator &first, BytesIterator &last);
+template <>
+int16_t fromBytes<int16_t>(BytesIterator &first, BytesIterator &last);
+template <>
+int32_t fromBytes<int32_t>(BytesIterator &first, BytesIterator &last);
+template <>
+int64_t fromBytes<int64_t>(BytesIterator &first, BytesIterator &last);
+template <> float fromBytes<float>(BytesIterator &first, BytesIterator &last);
+template <> double fromBytes<double>(BytesIterator &first, BytesIterator &last);
+template <> bool fromBytes<bool>(BytesIterator &first, BytesIterator &last);
+template <> char fromBytes<char>(BytesIterator &first, BytesIterator &last);
 
 // sobrecarga de operador de ostream
 std::ostream &operator<<(std::ostream &os, const Bytes &bytes);
