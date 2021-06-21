@@ -3,27 +3,32 @@
 #include <istream>
 #include <iterator>
 #include <ostream>
+#include <string>
+#include <type_traits>
+#include <vector>
 
 // genericos
 
-template <typename int_t, size_t bytes_n> Bytes toBytes(int_t val) {
+template <typename T> Bytes rawToBytes(T val) {
 	Bytes bytes;
-	bytes.reserve(bytes_n);
+	size_t len = sizeof(T);
+	bytes.reserve(len);
 	Byte *a_begin = reinterpret_cast<Byte *>(&val);
-	Byte *a_end = a_begin + bytes_n;
+	Byte *a_end = a_begin + len;
 	std::copy(a_begin, a_end, std::back_inserter(bytes));
 	return bytes;
 }
-template <typename int_t, size_t bytes_n>
-int_t fromBytes(BytesIterator &first, BytesIterator &last) {
+template <typename T>
+T rawFromBytes(BytesIterator &first, BytesIterator &last) {
 	size_t len = std::distance(first, last);
+	size_t bytes_n = sizeof(T);
 	if (len >= bytes_n) {
-		int_t val = 0;
+		T val;
 		Byte val_bytes[bytes_n];
 		// LSB -> MSB
 		std::copy(first, first + bytes_n, val_bytes);
 		first += bytes_n;
-		std::memcpy(&val, val_bytes, sizeof(int_t));
+		std::memcpy(&val, val_bytes, sizeof(T));
 		return val;
 	} else {
 		throw std::underflow_error("not enought bytes");
@@ -44,21 +49,24 @@ template <> Byte fromBytes<Byte>(BytesIterator &first, BytesIterator &last) {
 }
 
 // toBytes
+// genericos
+
+// especializaciones de escalares
 template <> Bytes toBytes<int8_t>(int8_t val) {
-	return toBytes<int8_t, 1>(val);
+	return rawToBytes<int8_t>(val);
 }
 template <> Bytes toBytes<int16_t>(int16_t val) {
-	return toBytes<int16_t, 2>(val);
+	return rawToBytes<int16_t>(val);
 }
 template <> Bytes toBytes<int32_t>(int32_t val) {
-	return toBytes<int32_t, 4>(val);
+	return rawToBytes<int32_t>(val);
 }
 template <> Bytes toBytes<int64_t>(int64_t val) {
-	return toBytes<int64_t, 8>(val);
+	return rawToBytes<int64_t>(val);
 }
-template <> Bytes toBytes<float>(float val) { return toBytes<float, 4>(val); }
+template <> Bytes toBytes<float>(float val) { return rawToBytes<float>(val); }
 template <> Bytes toBytes<double>(double val) {
-	return toBytes<double, 8>(val);
+	return rawToBytes<double>(val);
 }
 template <> Bytes toBytes<bool>(bool val) {
 	return toBytes(static_cast<Byte>(val));
@@ -68,34 +76,59 @@ template <> Bytes toBytes<char>(char val) {
 }
 
 // fromBytes
+// genericos
+
+// especializacion de escalares
 template <>
 int8_t fromBytes<int8_t>(BytesIterator &first, BytesIterator &last) {
-	return fromBytes<int8_t, 1>(first, last);
+	return rawFromBytes<int8_t>(first, last);
 }
 template <>
 int16_t fromBytes<int16_t>(BytesIterator &first, BytesIterator &last) {
-	return fromBytes<int16_t, 2>(first, last);
+	return rawFromBytes<int16_t>(first, last);
 }
 template <>
 int32_t fromBytes<int32_t>(BytesIterator &first, BytesIterator &last) {
-	return fromBytes<int32_t, 4>(first, last);
+	return rawFromBytes<int32_t>(first, last);
 }
 template <>
 int64_t fromBytes<int64_t>(BytesIterator &first, BytesIterator &last) {
-	return fromBytes<int64_t, 8>(first, last);
+	return rawFromBytes<int64_t>(first, last);
 }
 template <> float fromBytes<float>(BytesIterator &first, BytesIterator &last) {
-	return fromBytes<float, 4>(first, last);
+	return rawFromBytes<float>(first, last);
 }
 template <>
 double fromBytes<double>(BytesIterator &first, BytesIterator &last) {
-	return fromBytes<double, 8>(first, last);
+	return fromBytes<double>(first, last);
 }
 template <> bool fromBytes<bool>(BytesIterator &first, BytesIterator &last) {
 	return fromBytes<Byte>(first, last);
 }
 template <> char fromBytes<char>(BytesIterator &first, BytesIterator &last) {
 	return fromBytes<Byte>(first, last);
+}
+
+// arreglos y cadenas
+
+// toBytes
+template <typename T> Bytes vectorToBytes(std::vector<T> val);
+template <> Bytes toBytes(std::string val) {
+	Bytes bytes;
+	appendBytes(rawToBytes(val.size()), bytes);
+	std::copy(val.begin(), val.end(), std::back_inserter(bytes));
+	return bytes;
+}
+
+// fromBytes
+
+template <> std::string fromBytes(BytesIterator &first, BytesIterator &last) {
+	size_t len = rawFromBytes<size_t>(first, last);
+	std::string str;
+	str.reserve(len);
+	std::copy(first, first + len, std::back_inserter(str));
+	first += len;
+	return str;
 }
 
 // sobrecarga de operador de ostream
